@@ -58,7 +58,7 @@ TOKENS = [''.join(token) for token in itertools.product(COLORS, SHAPES)]
 
 # Quadrants
 #A2
-QUAD_1A = (
+QUAD_A2 = (
 	'NW,N,N,N,NE,NW,N,N,'
 	'W,S,X,X,X,X,SEYH,W,'
 	'WE,NWGT,X,X,X,X,N,X,'
@@ -70,7 +70,7 @@ QUAD_1A = (
 )
 
 #A1
-QUAD_1B = (
+QUAD_A1 = (
 	'NW,NE,NW,N,NS,N,N,N,'
 	'W,S,X,E,NWRC,X,X,X,'
 	'W,NEGT,W,X,X,X,X,X,'
@@ -81,18 +81,18 @@ QUAD_1B = (
 	'W,X,X,N,X,X,E,NW'
 )
 
-QUAD_2A = (
+QUAD_C1 = (
 	'NW,N,N,NE,NW,N,N,N,'
 	'W,X,X,X,X,E,SWBC,X,'
 	'W,S,X,X,X,X,N,X,'
 	'W,NEYT,W,X,X,S,X,X,'
 	'W,X,X,X,E,NWGQ,X,X,'
-	'W,X,SERH,W,X,X,X,X,'
-	'SW,X,N,X,X,X,X,S,'
+	'W,X,SERH,W,X,X,X,SEAV,'
+	'SW,X,N,X,X,X,X,SN,'
 	'NW,X,X,X,X,X,E,NW'
 )
 
-QUAD_2B = (
+QUAD_C2 = (
 	'NW,N,N,N,NE,NW,N,N,'
 	'W,X,SERH,W,X,X,X,X,'
 	'W,X,N,X,X,X,X,X,'
@@ -100,10 +100,10 @@ QUAD_2B = (
 	'SW,N,X,X,X,E,NWYT,X,'
 	'NW,X,X,X,X,S,X,X,'
 	'W,X,X,X,X,NEBC,W,S,'
-	'W,X,X,X,X,X,E,NW'
+	'W,X,X,SEAV,W,X,E,NW'
 )
 
-QUAD_3A = (
+QUAD_B2 = (
 	'NW,N,N,NE,NW,N,N,N,'
 	'W,X,X,X,X,SEGH,W,X,'
 	'WE,SWRQ,X,X,X,N,X,X,'
@@ -114,7 +114,7 @@ QUAD_3A = (
 	'W,X,X,X,X,X,E,NW'
 )
 
-QUAD_3B = (
+QUAD_B1 = (
 	'NW,N,NS,N,NE,NW,N,N,'
 	'W,E,NWYC,X,X,X,X,X,'
 	'W,X,X,X,X,X,X,X,'
@@ -125,18 +125,18 @@ QUAD_3B = (
 	'W,N,X,X,X,X,E,NW'
 )
 
-QUAD_4A = (
+QUAD_D2 = (
 	'NW,N,N,NE,NW,N,N,N,'
 	'W,X,X,X,X,X,X,X,'
 	'W,X,X,X,X,SEBH,W,X,'
 	'W,X,S,X,X,N,X,X,'
 	'SW,X,NEGC,W,X,X,X,X,'
 	'NW,S,X,X,X,X,E,SWRT,'
-	'WE,NWYQ,X,X,X,X,X,NS,'
+	'WE,NWYQ,X,X,X,X,X,SN,'
 	'W,X,X,X,X,X,E,NW'
 )
 
-QUAD_4B = (
+QUAD_D1 = (
 	'NW,N,N,NE,NW,N,N,N,'
 	'WE,SWRT,X,X,X,X,S,X,'
 	'W,N,X,X,X,X,NEGC,W,'
@@ -144,6 +144,94 @@ QUAD_4B = (
 	'W,X,SEBH,W,X,X,X,S,'
 	'SW,X,N,X,X,X,E,NWYQ,'
 	'NW,X,X,X,X,X,X,S,'
+	'W,X,X,X,X,X,E,NW'
+)
+
+QUAD_A3 = (
+	'NW,NE,NW,NS,N,N,N,N,'
+	'W,X,E,NWGT,X,X,X,X,'
+	'W,X,X,X,X,X,X,X,'
+	'W,X,X,X,X,X,SEYH,W,'
+	'WE,SWRC,X,X,X,X,N,X,'
+	'W,N,X,X,S,X,X,X,'
+	'SW,X,X,X,NEBQ,W,X,S,'
+	'NW,X,X,X,X,X,E,NW'
+)
+
+QUAD_A4 = (
+	'NW,N,N,N,N,NE,NW,N,'
+	'W,X,X,X,X,X,X,X,'
+	'W,S,X,X,X,X,X,X,'
+	'WE,NWRC,X,X,X,X,X,X,'
+	'W,X,X,X,X,X,SEYH,W,'
+	'SW,X,S,X,X,X,N,X,'
+	'NW,X,NEGT,SWBQ,X,X,X,S,'
+	'W,X,X,N,X,X,E,NW'
+)
+
+QUAD_B3 = (
+	'NW,N,N,N,N,NE,NW,N,'
+	'W,X,X,S,X,X,X,X,'
+	'W,X,E,NWYC,X,X,X,X,'
+	'SW,X,S,X,E,SWBT,X,X,'
+	'NW,X,NERQ,W,X,N,X,X,'
+	'W,X,X,X,SEGH,W,X,X,'
+	'W,X,X,X,N,X,X,S,'
+	'W,X,X,X,X,X,E,NW'
+)
+
+QUAD_B4 = (
+	'NW,N,NE,NW,N,N,N,N,'
+	'W,X,X,X,X,X,S,X,'
+	'W,X,X,X,X,SEGH,NWYC,X,'
+	'W,X,X,X,X,N,X,X,'
+	'W,X,X,X,X,X,X,X,'
+	'W,SERQ,W,X,X,X,X,X,'
+	'SW,N,X,X,S,X,X,S,'
+	'NW,X,X,X,NEBT,W,E,NW'
+)
+
+QUAD_C3 = (
+	'NW,N,NE,NW,N,N,N,N,'
+	'W,X,X,X,E,SWBC,X,X,'
+	'W,X,X,X,X,N,X,SEAV,'
+	'SW,X,X,X,X,X,X,N,'
+	'NW,X,X,SERH,W,X,S,X,'
+	'W,S,X,N,X,X,NEGQ,W,'
+	'W,NEYT,W,X,X,X,X,S,'
+	'W,X,X,X,X,X,E,NW'
+)
+
+QUAD_C4 = (
+	'NW,N,N,N,NE,NW,N,N,'
+	'W,X,X,X,X,X,S,X,'
+	'W,X,S,X,X,E,NWYT,X,'
+	'W,X,NEBC,SWGQ,X,X,X,X,'
+	'W,X,X,N,X,X,X,X,'
+	'W,SERH,W,X,X,X,X,X,'
+	'SW,N,X,X,X,X,X,S,'
+	'NW,X,X,X,X,SEAV,EW,NW'
+)
+
+QUAD_D3 = (
+	'NW,NE,NW,N,NS,N,N,N,'
+	'W,X,X,X,NEGC,W,X,X,'
+	'W,X,X,X,X,X,X,X,'
+	'WE,SWRT,X,X,X,X,X,X,'
+	'W,N,X,X,X,S,X,X,'
+	'SW,X,X,X,E,NWYQ,X,X,'
+	'NW,X,X,SEBH,W,X,X,S,'
+	'W,X,X,N,X,X,E,NW'
+)
+
+QUAD_D4 = (
+	'NW,N,N,N,NE,NW,N,N,'
+	'W,X,X,X,X,X,X,X,'
+	'SW,X,X,X,X,X,SEBH,W,'
+	'NW,X,S,X,X,X,N,X,'
+	'W,X,NEGC,SWRT,X,X,X,X,'
+	'W,X,X,N,X,S,X,X,'
+	'W,X,X,X,E,NWYQ,X,S,'
 	'W,X,X,X,X,X,E,NW'
 )
 
