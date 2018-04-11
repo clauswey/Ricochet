@@ -26,9 +26,14 @@
 #define true 1
 #define false 0
 
+
+//contains oposite direction at array position of direction
+// REVERSE[NORTH]=SOUTH
 const unsigned int REVERSE[] = {
     0, SOUTH, WEST, 0, NORTH, 0, 0, 0, EAST
 };
+//index offset for stepping one square in direction
+// should be dependent on size of row (board)
 
 const int OFFSET[] = {
     0, -16, 1, 0, 16, 0, 0, 0, -1
@@ -36,7 +41,7 @@ const int OFFSET[] = {
 
 typedef struct {
     unsigned int grid[256];
-    unsigned int moves[256];
+    unsigned int moves[256];//grid of minimum moves
     unsigned int robots[4];
     unsigned int token;
     unsigned int last;
@@ -266,16 +271,23 @@ unsigned int _search(
     Set *set) 
 {
     _nodes++;
+    //if solution is found return depth
     if (game_over(game)) {
         return depth;
     }
+    
+    //if max depth is reached return 0
     if (depth == max_depth) {
         return 0;
     }
+    
+    //height is the room left for search
+    // if the minimum number or moves for the robot to reach goal is higher then height return 0
     unsigned int height = max_depth - depth;
     if (game->moves[game->robots[0]] > height) {
         return 0;
     }
+
     if (height != 1 && !set_add(set, make_key(game), height)) {
         _hits++;
         return 0;
