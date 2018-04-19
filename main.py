@@ -80,6 +80,7 @@ class View(wx.Panel):
             model.GREEN: wx.Colour(50, 205, 50),
             model.BLUE: wx.Colour(65, 105, 225),
             model.YELLOW: wx.Colour(255, 215, 0),
+            model.ANY: wx.Colour(128, 128, 128),
         }
         dc = wx.AutoBufferedPaintDC(self)
         dc.SetBackground(wx.LIGHT_GREY_BRUSH)
@@ -146,8 +147,14 @@ class View(wx.Panel):
 class Frame(wx.Frame):
     def __init__(self, seed=None):
         wx.Frame.__init__(self, None, -1, 'Ricochet Robot!')
+<<<<<<< HEAD
         game = model.Game(seed)
         game = model.Game.hardest()
+=======
+        # game = model.Game(seed)
+        game = model.Game.hardest()
+        # game = model.Game.medium()
+>>>>>>> working on 5 robots
         self.view = View(self, game)
         self.view.SetSize((800, 800))
         self.Fit()

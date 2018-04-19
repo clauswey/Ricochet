@@ -42,6 +42,7 @@ RED = 'R'
 GREEN = 'G'
 BLUE = 'B'
 YELLOW = 'Y'
+ANY = 'A'
 
 COLORS = [RED, GREEN, BLUE, YELLOW]
 
@@ -50,14 +51,15 @@ CIRCLE = 'C'
 TRIANGLE = 'T'
 SQUARE = 'Q'
 HEXAGON = 'H'
+VORTEX = 'V'
 
 SHAPES = [CIRCLE, TRIANGLE, SQUARE, HEXAGON]
 
 # Tokens
 TOKENS = [''.join(token) for token in itertools.product(COLORS, SHAPES)]
+# TOKENS.append('AV')
 
 # Quadrants
-#A2
 QUAD_A2 = (
 	'NW,N,N,N,NE,NW,N,N,'
 	'W,S,X,X,X,X,SEYH,W,'
@@ -69,7 +71,6 @@ QUAD_A2 = (
 	'W,X,X,N,X,X,E,NW'
 )
 
-#A1
 QUAD_A1 = (
 	'NW,NE,NW,N,NS,N,N,N,'
 	'W,S,X,E,NWRC,X,X,X,'
@@ -81,16 +82,38 @@ QUAD_A1 = (
 	'W,X,X,N,X,X,E,NW'
 )
 
+# QUAD_C1 = (
+# 	'NW,N,N,NE,NW,N,N,N,'
+# 	'W,X,X,X,X,E,SWBC,X,'
+# 	'W,S,X,X,X,X,N,X,'
+# 	'W,NEYT,W,X,X,S,X,X,'
+# 	'W,X,X,X,E,NWGQ,X,X,'
+# 	'W,X,SERH,W,X,X,X,SEAV,'
+# 	'SW,X,N,X,X,X,X,SN,'
+# 	'NW,X,X,X,X,X,E,NW'
+# )
+
 QUAD_C1 = (
 	'NW,N,N,NE,NW,N,N,N,'
 	'W,X,X,X,X,E,SWBC,X,'
 	'W,S,X,X,X,X,N,X,'
 	'W,NEYT,W,X,X,S,X,X,'
 	'W,X,X,X,E,NWGQ,X,X,'
-	'W,X,SERH,W,X,X,X,SEAV,'
+	'W,X,SERH,W,X,X,X,SE,'
 	'SW,X,N,X,X,X,X,SN,'
 	'NW,X,X,X,X,X,E,NW'
 )
+
+# QUAD_C2 = (
+# 	'NW,N,N,N,NE,NW,N,N,'
+# 	'W,X,SERH,W,X,X,X,X,'
+# 	'W,X,N,X,X,X,X,X,'
+# 	'WE,SWGQ,X,X,X,X,S,X,'
+# 	'SW,N,X,X,X,E,NWYT,X,'
+# 	'NW,X,X,X,X,S,X,X,'
+# 	'W,X,X,X,X,NEBC,W,S,'
+# 	'W,X,X,SEAV,W,X,E,NW'
+# )
 
 QUAD_C2 = (
 	'NW,N,N,N,NE,NW,N,N,'
@@ -100,7 +123,7 @@ QUAD_C2 = (
 	'SW,N,X,X,X,E,NWYT,X,'
 	'NW,X,X,X,X,S,X,X,'
 	'W,X,X,X,X,NEBC,W,S,'
-	'W,X,X,SEAV,W,X,E,NW'
+	'W,X,X,SE,W,X,E,NW'
 )
 
 QUAD_B2 = (
@@ -191,16 +214,38 @@ QUAD_B4 = (
 	'NW,X,X,X,NEBT,W,E,NW'
 )
 
+# QUAD_C3 = (
+# 	'NW,N,NE,NW,N,N,N,N,'
+# 	'W,X,X,X,E,SWBC,X,X,'
+# 	'W,X,X,X,X,N,X,SEAV,'
+# 	'SW,X,X,X,X,X,X,N,'
+# 	'NW,X,X,SERH,W,X,S,X,'
+# 	'W,S,X,N,X,X,NEGQ,W,'
+# 	'W,NEYT,W,X,X,X,X,S,'
+# 	'W,X,X,X,X,X,E,NW'
+# )
+
 QUAD_C3 = (
 	'NW,N,NE,NW,N,N,N,N,'
 	'W,X,X,X,E,SWBC,X,X,'
-	'W,X,X,X,X,N,X,SEAV,'
+	'W,X,X,X,X,N,X,SE,'
 	'SW,X,X,X,X,X,X,N,'
 	'NW,X,X,SERH,W,X,S,X,'
 	'W,S,X,N,X,X,NEGQ,W,'
 	'W,NEYT,W,X,X,X,X,S,'
 	'W,X,X,X,X,X,E,NW'
 )
+
+# QUAD_C4 = (
+# 	'NW,N,N,N,NE,NW,N,N,'
+# 	'W,X,X,X,X,X,S,X,'
+# 	'W,X,S,X,X,E,NWYT,X,'
+# 	'W,X,NEBC,SWGQ,X,X,X,X,'
+# 	'W,X,X,N,X,X,X,X,'
+# 	'W,SERH,W,X,X,X,X,X,'
+# 	'SW,N,X,X,X,X,X,S,'
+# 	'NW,X,X,X,X,SEAV,EW,NW'
+# )
 
 QUAD_C4 = (
 	'NW,N,N,N,NE,NW,N,N,'
@@ -210,7 +255,7 @@ QUAD_C4 = (
 	'W,X,X,N,X,X,X,X,'
 	'W,SERH,W,X,X,X,X,X,'
 	'SW,N,X,X,X,X,X,S,'
-	'NW,X,X,X,X,SEAV,EW,NW'
+	'NW,X,X,X,X,SE,EW,NW'
 )
 
 QUAD_D3 = (
@@ -292,6 +337,26 @@ def create_grid(quads=None):
 			y += dy * 8
 			index = idx(x, y)
 			result[index] = data
+
+	#stich seams
+	for row in range(16):
+		stichIdx = row*16+7
+		left = result[stichIdx]
+		right = result[stichIdx+1]
+		if EAST in left and not WEST in right:
+			result[stichIdx+1] += WEST
+		if WEST in right and not EAST in left:
+			result[stichIdx] += EAST
+
+	for col in range(16):
+		stichIdx = 7*16+col
+		upper = result[stichIdx]
+		lower = result[stichIdx+16]
+		if SOUTH in upper and not NORTH in lower:
+			result[stichIdx+16] = NORTH + result[stichIdx+16]
+		if NORTH in lower and not SOUTH in upper:
+			result[stichIdx] = SOUTH + result[stichIdx]
+
 	return result
 
 def to_mask(cell):
@@ -305,14 +370,16 @@ def to_mask(cell):
 class Game(object):
 	@staticmethod
 	def hardest():
-		quads = [QUAD_2B, QUAD_4B, QUAD_3B, QUAD_1B]
+		quads = [QUAD_C2, QUAD_D1, QUAD_B1, QUAD_A1]
 		robots = [226, 48, 43, 18]
 		token = 'BT'
 		return Game(quads=quads, robots=robots, token=token)
+	@staticmethod
 	def medium():
-		quads = [QUAD_2B, QUAD_4B, QUAD_3B, QUAD_1B]
-		robots = [226, 48, 43, 18]
-		token = 'BT'
+		 # C3,B2,A2,D4 -r red,11,1 -r blue,5,7 -r yellow,5,0 -r green,14,0 -g blue,circle
+		quads = [QUAD_C3, QUAD_B2, QUAD_D4, QUAD_A2]
+		robots = [177, 224, 87, 80]
+		token = 'BC'
 		return Game(quads=quads, robots=robots, token=token)
 	def __init__(self, seed=None, quads=None, robots=None, token=None):
 		if seed:
@@ -398,6 +465,9 @@ class Game(object):
 	def key(self):
 		return tuple(self.robots.itervalues())
 	def search(self):
+		now = date()
+		print(now)
+		#iterative depening
 		max_depth = 1
 		while True:
 			#print 'Searching to depth:', max_depth
@@ -405,6 +475,7 @@ class Game(object):
 			if result is not None:
 				return result
 			max_depth += 1
+			print "max depth increased"
 	def _search(self, path, memo, depth, max_depth):
 		if self.over():
 			return list(path)
@@ -439,7 +510,10 @@ class Game(object):
 			grid.append(mask)
 			if self.token in cell:
 				token = index
-		robot = COLORS.index(self.token[0])
+		if self.token[0] == 'A':
+			robot = None
+		else:
+			robot = COLORS.index(self.token[0])
 		return {
 			'grid': grid,
 			'robot': robot,

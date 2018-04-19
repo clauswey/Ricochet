@@ -16,6 +16,8 @@
 #define UNSET_ROBOT(x) (x &= ~ROBOT)
 
 #define PACK_MOVE(robot, direction) (robot << 4 | direction)
+#define UNPACK_ROBOT_FROM_MOVE(move) (move >> 4 & 0xFF)
+#define UNPACK_DIRECTION_FROM_MOVE(move) (move & 0xF)
 #define PACK_UNDO(robot, start, last) (robot << 16 | start << 8 | last)
 #define UNPACK_ROBOT(undo) ((undo >> 16) & 0xff)
 #define UNPACK_START(undo) ((undo >> 8) & 0xff)
@@ -37,6 +39,14 @@ const unsigned int REVERSE[] = {
 
 const int OFFSET[] = {
     0, -16, 1, 0, 16, 0, 0, 0, -1
+};
+
+const char* COLOR_NAMES[] = {
+  "Red","Green","Blue","Yellow"
+};
+
+const char* DIRECTION_NAMES[] = {
+  "N/A","NORTH","EAST","N/A","SOUTH","N/A","N/A","N/A","WEST"
 };
 
 typedef struct {
@@ -159,9 +169,9 @@ inline bool game_over(Game *game) {
 }
 
 bool can_move(
-    Game *game, 
-    unsigned int robot, 
-    unsigned int direction) 
+    Game *game,
+    unsigned int robot,
+    unsigned int direction)
 {
     unsigned int index = game->robots[robot];
     if (HAS_WALL(game->grid[index], direction)) {
@@ -178,9 +188,9 @@ bool can_move(
 }
 
 unsigned int compute_move(
-    Game *game, 
-    unsigned int robot, 
-    unsigned int direction) 
+    Game *game,
+    unsigned int robot,
+    unsigned int direction)
 {
     unsigned int index = game->robots[robot] + OFFSET[direction];
     while (true) {
@@ -197,9 +207,9 @@ unsigned int compute_move(
 }
 
 unsigned int do_move(
-    Game *game, 
-    unsigned int robot, 
-    unsigned int direction) 
+    Game *game,
+    unsigned int robot,
+    unsigned int direction)
 {
     unsigned int start = game->robots[robot];
     unsigned int end = compute_move(game, robot, direction);
@@ -212,8 +222,8 @@ unsigned int do_move(
 }
 
 void undo_move(
-    Game *game, 
-    unsigned int undo) 
+    Game *game,
+    unsigned int undo)
 {
     unsigned int robot = UNPACK_ROBOT(undo);
     unsigned int start = UNPACK_START(undo);
@@ -264,23 +274,23 @@ unsigned int _hits;
 unsigned int _inner;
 
 unsigned int _search(
-    Game *game, 
-    unsigned int depth, 
-    unsigned int max_depth, 
+    Game *game,
+    unsigned int depth,
+    unsigned int max_depth,
     unsigned char *path,
-    Set *set) 
+    Set *set)
 {
     _nodes++;
     //if solution is found return depth
     if (game_over(game)) {
         return depth;
     }
-    
+
     //if max depth is reached return 0
     if (depth == max_depth) {
         return 0;
     }
-    
+
     //height is the room left for search
     // if the minimum number or moves for the robot to reach goal is higher then height return 0
     unsigned int height = max_depth - depth;
@@ -315,11 +325,31 @@ unsigned int _search(
     return 0;
 }
 
-unsigned int search(
-    Game *game, 
-    unsigned char *path,
-    void (*callback)(unsigned int, unsigned int, unsigned int, unsigned int)) 
+void print_game_grid(unsigned int *grid)
 {
+  for(int row = 0; row < 16; row++)
+  {
+    for(int column = 0; column < 16; column++)
+    {
+      printf("%i,",grid[(row*16)+column]);
+    }
+    printf("\n");
+  }
+}
+
+void print_game_robots(unsigned int *robots)
+{
+  printf("robots: { %i, %i, %i, %i }\n", robots[0], robots[1], robots[2], robots[3]);
+}
+
+unsigned int search(
+    Game *game,
+    unsigned char *path,
+    void (*callback)(unsigned int, unsigned int, unsigned int, unsigned int))
+{
+    print_game_grid(game->grid);
+    print_game_robots(game->robots);
+    printf("token: %i\n", game->token);
     if (game_over(game)) {
         return 0;
     }
@@ -344,22 +374,37 @@ unsigned int search(
 }
 
 void _callback(
-    unsigned int depth, 
-    unsigned int nodes, 
-    unsigned int inner, 
-    unsigned int hits) 
+    unsigned int depth,
+    unsigned int nodes,
+    unsigned int inner,
+    unsigned int hits)
 {
     printf("%u %u %u %u\n", depth, nodes, inner, hits);
 }
 
 int main(int argc, char *argv[]) {
+    // Game game = {
+    //     {9, 1, 5, 1, 3, 9, 1, 1, 1, 3, 9, 1, 1, 1, 1, 3, 8, 2, 9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 8, 6, 8, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 1, 0, 3, 8, 0, 0, 0, 0, 2, 12, 0, 2, 9, 0, 0, 0, 0, 4, 2, 12, 0, 0, 0, 4, 0, 1, 0, 0, 0, 0, 0, 0, 0, 3, 10, 9, 0, 0, 0, 3, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 8, 6, 8, 0, 0, 0, 0, 4, 4, 0, 0, 2, 12, 0, 0, 2, 8, 1, 0, 0, 0, 0, 2, 9, 3, 8, 0, 0, 1, 0, 0, 2, 8, 0, 4, 0, 2, 12, 2, 12, 6, 8, 0, 0, 0, 0, 0, 6, 8, 18, 9, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 4, 0, 3, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 9, 0, 2, 28, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 8, 0, 0, 0, 2, 9, 0, 0, 0, 4, 0, 0, 0, 0, 0, 1, 0, 0, 2, 12, 2, 8, 0, 0, 16, 3, 8, 0, 0, 0, 4, 0, 0, 0, 0, 1, 2, 8, 6, 8, 0, 0, 0, 0, 0, 0, 3, 8, 0, 0, 0, 16, 2, 12, 5, 4, 4, 4, 6, 12, 4, 4, 4, 4, 6, 12, 4, 4, 6},
+    //     {0},
+    //     {176, 145, 211, 238},
+    //     54,
+    //     0
+    // };
     Game game = {
-        {9, 1, 5, 1, 3, 9, 1, 1, 1, 3, 9, 1, 1, 1, 1, 3, 8, 2, 9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 8, 6, 8, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 1, 0, 3, 8, 0, 0, 0, 0, 2, 12, 0, 2, 9, 0, 0, 0, 0, 4, 2, 12, 0, 0, 0, 4, 0, 1, 0, 0, 0, 0, 0, 0, 0, 3, 10, 9, 0, 0, 0, 3, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 8, 6, 8, 0, 0, 0, 0, 4, 4, 0, 0, 2, 12, 0, 0, 2, 8, 1, 0, 0, 0, 0, 2, 9, 3, 8, 0, 0, 1, 0, 0, 2, 8, 0, 4, 0, 2, 12, 2, 12, 6, 8, 0, 0, 0, 0, 0, 6, 8, 18, 9, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 4, 0, 3, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 9, 0, 2, 28, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 8, 0, 0, 0, 2, 9, 0, 0, 0, 4, 0, 0, 0, 0, 0, 1, 0, 0, 2, 12, 2, 8, 0, 0, 16, 3, 8, 0, 0, 0, 4, 0, 0, 0, 0, 1, 2, 8, 6, 8, 0, 0, 0, 0, 0, 0, 3, 8, 0, 0, 0, 16, 2, 12, 5, 4, 4, 4, 6, 12, 4, 4, 4, 4, 6, 12, 4, 4, 6},
+        {9,1,1,1,3,9,1,1,1,3,9,1,1,1,5,3,8,0,22,8,0,0,0,0,0,0,0,0,0,2,9,2,8,0,1,0,0,0,0,0,0,0,2,28,0,0,0,2,26,12,0,0,0,0,4,0,0,0,0,1,0,0,0,6,12,1,0,0,0,2,9,0,0,0,0,0,0,0,0,3,9,0,0,0,0,4,0,0,0,0,0,0,0,0,0,2,8,0,0,0,0,3,8,4,4,0,4,0,0,6,8,2,8,0,0,6,8,0,2,9,3,8,3,8,0,1,0,2,8,0,0,5,0,0,2,12,6,8,0,0,0,0,4,2,8,0,0,3,8,0,0,1,1,0,0,0,0,2,9,2,8,0,0,0,0,0,0,0,0,0,2,12,0,0,0,6,10,12,0,0,0,0,0,0,0,4,0,1,0,0,0,3,8,1,0,0,0,0,6,8,0,3,8,0,0,0,0,2,12,0,4,0,0,0,1,0,0,0,0,0,0,0,0,2,9,2,25,0,0,0,0,0,0,0,0,0,0,6,8,2,12,4,4,4,4,6,12,4,4,4,6,12,4,5,4,6},
         {0},
-        {176, 145, 211, 238},
-        54,
+        {43, 48, 226, 18},
+        201,
         0
     };
+
     unsigned char path[32];
-    search(&game, path, _callback);
+    int solutionLength = search(&game, path, _callback);
+    printf("solution:\n");
+    for(int i = 0; i < solutionLength && i < 32; i++)
+    {
+      unsigned int robot = UNPACK_ROBOT_FROM_MOVE(path[i]);
+      unsigned int direction = UNPACK_DIRECTION_FROM_MOVE(path[i]);
+    	printf("%i: r:%s\td:%s\n", i, COLOR_NAMES[robot], DIRECTION_NAMES[direction]);
+    }
 }
