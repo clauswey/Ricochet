@@ -42,7 +42,7 @@ const int OFFSET[] = {
 };
 
 const char* COLOR_NAMES[] = {
-  "Red","Green","Blue","Yellow"
+  "Red","Green","Blue","Yellow","Silver"
 };
 
 const char* DIRECTION_NAMES[] = {
@@ -52,13 +52,14 @@ const char* DIRECTION_NAMES[] = {
 typedef struct {
     unsigned int grid[256];
     unsigned int moves[256];//grid of minimum moves
-    unsigned int robots[4];
+    unsigned int robots[8];
+    unsigned int robot_count;
     unsigned int token;
     unsigned int last;
 } Game;
 
 typedef struct {
-    unsigned int key;
+    unsigned long long key;
     unsigned int depth;
 } Entry;
 
@@ -75,8 +76,8 @@ inline void swap(unsigned int *array, unsigned int a, unsigned int b) {
 }
 
 inline unsigned int make_key(Game *game) {
-    unsigned int robots[4];
-    memcpy(robots, game->robots, sizeof(unsigned int) * 4);
+    unsigned int robots[8];
+    memcpy(robots, game->robots, sizeof(unsigned int) * 8);
     if (robots[1] > robots[2]) {
         swap(robots, 1, 2);
     }
@@ -303,7 +304,7 @@ unsigned int _search(
         return 0;
     }
     _inner++;
-    for (unsigned int robot = 0; robot < 4; robot++) {
+    for (unsigned int robot = 0; robot < game->robot_count; robot++) {
         if (robot && game->moves[game->robots[0]] == height) {
             continue;
         }
@@ -337,9 +338,18 @@ void print_game_grid(unsigned int *grid)
   }
 }
 
-void print_game_robots(unsigned int *robots)
+void print_game_robots(Game *game)
 {
-  printf("robots: { %i, %i, %i, %i }\n", robots[0], robots[1], robots[2], robots[3]);
+  // printf("robots: { %i, %i, %i, %i }\n", robots[0], robots[1], robots[2], robots[3]);
+  printf("robots: {");
+  for(int i = 0; i < game->robot_count; i++)
+  {
+    printf("%i",game->robots[i]);
+    if(i < game->robot_count-1)
+    {
+      printf(",");
+    }
+  }
 }
 
 unsigned int search(
@@ -348,7 +358,7 @@ unsigned int search(
     void (*callback)(unsigned int, unsigned int, unsigned int, unsigned int))
 {
     print_game_grid(game->grid);
-    print_game_robots(game->robots);
+    print_game_robots(game);
     printf("token: %i\n", game->token);
     if (game_over(game)) {
         return 0;
@@ -394,6 +404,7 @@ int main(int argc, char *argv[]) {
         {9,1,1,1,3,9,1,1,1,3,9,1,1,1,5,3,8,0,22,8,0,0,0,0,0,0,0,0,0,2,9,2,8,0,1,0,0,0,0,0,0,0,2,28,0,0,0,2,26,12,0,0,0,0,4,0,0,0,0,1,0,0,0,6,12,1,0,0,0,2,9,0,0,0,0,0,0,0,0,3,9,0,0,0,0,4,0,0,0,0,0,0,0,0,0,2,8,0,0,0,0,3,8,4,4,0,4,0,0,6,8,2,8,0,0,6,8,0,2,9,3,8,3,8,0,1,0,2,8,0,0,5,0,0,2,12,6,8,0,0,0,0,4,2,8,0,0,3,8,0,0,1,1,0,0,0,0,2,9,2,8,0,0,0,0,0,0,0,0,0,2,12,0,0,0,6,10,12,0,0,0,0,0,0,0,4,0,1,0,0,0,3,8,1,0,0,0,0,6,8,0,3,8,0,0,0,0,2,12,0,4,0,0,0,1,0,0,0,0,0,0,0,0,2,9,2,25,0,0,0,0,0,0,0,0,0,0,6,8,2,12,4,4,4,4,6,12,4,4,4,6,12,4,5,4,6},
         {0},
         {43, 48, 226, 18},
+        4,
         201,
         0
     };
