@@ -23,6 +23,7 @@
 #define UNPACK_START(undo) ((undo >> 8) & 0xff)
 #define UNPACK_LAST(undo) (undo & 0xff)
 #define MAKE_KEY(x) (x[0] | (x[1] << 8) | (x[2] << 16) | (x[3] << 24))
+#define MAKE_KEY_EIGHT(x) (x[0] | (x[1] << 8) | (x[2] << 16) | (x[3] << 24) | (x[4] << 32) | (x[5] << 40) | (x[6] << 48) | (x[7] << 56))
 
 #define bool unsigned int
 #define true 1
@@ -42,7 +43,7 @@ const int OFFSET[] = {
 };
 
 const char* COLOR_NAMES[] = {
-  "Red","Green","Blue","Yellow","Silver"
+  "Red","Green","Blue","Yellow","Magenta"
 };
 
 const char* DIRECTION_NAMES[] = {
@@ -75,6 +76,17 @@ inline void swap(unsigned int *array, unsigned int a, unsigned int b) {
     array[b] = temp;
 }
 
+inline unsigned long long make_key_shifts(int count, unsigned int *robots)
+{
+  unsigned long long key = robots[0];
+  for(int i = 1; i < count; i++)
+  {
+    unsigned long long temp = robots[i];
+    key = key | temp << (i*8);
+  }
+  return key;
+}
+
 inline unsigned int make_key(Game *game) {
     unsigned int robots[8];
     memcpy(robots, game->robots, sizeof(unsigned int) * 8);
@@ -87,10 +99,10 @@ inline unsigned int make_key(Game *game) {
     if (robots[1] > robots[2]) {
         swap(robots, 1, 2);
     }
-    return MAKE_KEY(robots);
+    return make_key_shifts(game->robot_count,robots);
 }
 
-unsigned int hash(unsigned int key) {
+unsigned long long hash(unsigned int key) {
     key = ~key + (key << 15);
     key = key ^ (key >> 12);
     key = key + (key << 2);
@@ -118,8 +130,8 @@ void set_free(Set *set, unsigned int count) {
 
 void set_grow(Set *set);
 
-bool set_add(Set *set, unsigned int key, unsigned int depth) {
-    unsigned int index = hash(key) & set->mask;
+bool set_add(Set *set, unsigned long long key, unsigned int depth) {
+    unsigned long long index = 0;
     Entry *entry = set->data + index;
     while (entry->key && entry->key != key) {
         index = (index + 1) & set->mask;
@@ -162,6 +174,7 @@ void set_grow(Set *set) {
 
 inline bool game_over(Game *game) {
     if (game->robots[0] == game->token) {
+        printf("Game Over: %i -> Token: %i", game->robots[0], game->token);
         return true;
     }
     else {
@@ -219,6 +232,7 @@ unsigned int do_move(
     game->last = PACK_MOVE(robot, direction);
     UNSET_ROBOT(game->grid[start]);
     SET_ROBOT(game->grid[end]);
+    printf("Move: %i %i -> %i\n",robot, start, end);
     return PACK_UNDO(robot, start, last);
 }
 
@@ -403,8 +417,8 @@ int main(int argc, char *argv[]) {
     Game game = {
         {9,1,1,1,3,9,1,1,1,3,9,1,1,1,5,3,8,0,22,8,0,0,0,0,0,0,0,0,0,2,9,2,8,0,1,0,0,0,0,0,0,0,2,28,0,0,0,2,26,12,0,0,0,0,4,0,0,0,0,1,0,0,0,6,12,1,0,0,0,2,9,0,0,0,0,0,0,0,0,3,9,0,0,0,0,4,0,0,0,0,0,0,0,0,0,2,8,0,0,0,0,3,8,4,4,0,4,0,0,6,8,2,8,0,0,6,8,0,2,9,3,8,3,8,0,1,0,2,8,0,0,5,0,0,2,12,6,8,0,0,0,0,4,2,8,0,0,3,8,0,0,1,1,0,0,0,0,2,9,2,8,0,0,0,0,0,0,0,0,0,2,12,0,0,0,6,10,12,0,0,0,0,0,0,0,4,0,1,0,0,0,3,8,1,0,0,0,0,6,8,0,3,8,0,0,0,0,2,12,0,4,0,0,0,1,0,0,0,0,0,0,0,0,2,9,2,25,0,0,0,0,0,0,0,0,0,0,6,8,2,12,4,4,4,4,6,12,4,4,4,6,12,4,5,4,6},
         {0},
-        {43, 48, 226, 18},
-        4,
+        {43, 48, 226, 18, 254},
+        5,
         201,
         0
     };

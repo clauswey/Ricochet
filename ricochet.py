@@ -1,6 +1,16 @@
 from ctypes import *
+# import timeit
+from timeit import default_timer as timer
 
-COLORS = {
+ROBOT_COLORS = {
+    0: 'R',
+    1: 'G',
+    2: 'B',
+    3: 'Y',
+    4: 'M',
+}
+
+TARGET_COLORS = {
     0: 'R',
     1: 'G',
     2: 'B',
@@ -20,7 +30,8 @@ class Game(Structure):
     _fields_ = [
         ('grid', c_uint * 256),
         ('moves', c_uint * 256),
-        ('robots', c_uint * 4),
+        ('robots', c_uint * 8),
+        ('robot_count', c_uint),
         ('token', c_uint),
         ('last', c_uint),
     ]
@@ -30,19 +41,23 @@ CALLBACK_FUNC = CFUNCTYPE(None, c_uint, c_uint, c_uint, c_uint)
 def search(game, callback=None):
     callback = CALLBACK_FUNC(callback) if callback else None
     data = game.export()
-    game = Game()
-    game.token = data['token']
-    game.last = 0
+    cgame = Game()
+    cgame.robot_count = data['robot_count']
+    cgame.token = data['token']
+    cgame.last = 0
     for index, value in enumerate(data['grid']):
-        game.grid[index] = value
+        cgame.grid[index] = value
     for index, value in enumerate(data['robots']):
-        game.robots[index] = value
+        cgame.robots[index] = value
     robot = data['robot']
     colors = list('RGBY')
     colors[0], colors[robot] = colors[robot], colors[0]
     game.robots[0], game.robots[robot] = game.robots[robot], game.robots[0]
     path = create_string_buffer(256)
-    depth = dll.search(byref(game), path, callback)
+    start = timer()
+    depth = dll.search(byref(cgame), path, callback)
+    end = timer()
+    print(end - start)
     result = []
     for value in path.raw[:depth]:
         value = ord(value)

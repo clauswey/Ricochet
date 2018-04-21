@@ -46,9 +46,9 @@ class View(wx.Panel):
             self.GetParent().Close()
         elif code >= 32 and code < 128:
             value = chr(code)
-            if value in model.COLORS:
+            if value in model.ROBOT_COLORS:
                 self.color = value
-            elif value == 'S':
+            elif value == 'F':
                 self.solve()
             elif value == 'U' and self.undo:
                 self.undo_move()
@@ -80,6 +80,7 @@ class View(wx.Panel):
             model.GREEN: wx.Colour(50, 205, 50),
             model.BLUE: wx.Colour(65, 105, 225),
             model.YELLOW: wx.Colour(255, 215, 0),
+            model.MAGENTA: wx.Colour(255, 0, 215),
             model.ANY: wx.Colour(128, 128, 128),
         }
         dc = wx.AutoBufferedPaintDC(self)
@@ -152,7 +153,7 @@ class Frame(wx.Frame):
         game = model.Game.hardest()
 =======
         # game = model.Game(seed)
-        game = model.Game.hardest()
+        game = model.Game.bug()
         # game = model.Game.medium()
 >>>>>>> working on 5 robots
         self.view = View(self, game)
