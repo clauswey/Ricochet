@@ -373,7 +373,7 @@ class Game(object):
     @staticmethod
     def bug():
         quads = [QUAD_B2, QUAD_A4, QUAD_C3, QUAD_D3]
-        robots = [171, 19, 127, 219, 211]
+        robots = [171, 19, 127, 14, 211]
         token = 'GT'
         return Game(quads=quads, robots=robots, token=token)
     @staticmethod

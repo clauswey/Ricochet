@@ -148,14 +148,10 @@ class View(wx.Panel):
 class Frame(wx.Frame):
     def __init__(self, seed=None):
         wx.Frame.__init__(self, None, -1, 'Ricochet Robot!')
-<<<<<<< HEAD
-        game = model.Game(seed)
-        game = model.Game.hardest()
-=======
         # game = model.Game(seed)
-        game = model.Game.bug()
-        # game = model.Game.medium()
->>>>>>> working on 5 robots
+        # game = model.Game.hardest()
+        game = model.Game.hardest()
+        # game = model.Game.bug()
         self.view = View(self, game)
         self.view.SetSize((800, 800))
         self.Fit()

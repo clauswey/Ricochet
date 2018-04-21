@@ -18,9 +18,10 @@
 #define PACK_MOVE(robot, direction) (robot << 4 | direction)
 #define UNPACK_ROBOT_FROM_MOVE(move) (move >> 4 & 0xFF)
 #define UNPACK_DIRECTION_FROM_MOVE(move) (move & 0xF)
-#define PACK_UNDO(robot, start, last) (robot << 16 | start << 8 | last)
-#define UNPACK_ROBOT(undo) ((undo >> 16) & 0xff)
+#define PACK_UNDO(robot, start, last, did_sort) (did_sort << 24 | robot << 16 | start << 8 | last)
+#define UNPACK_ROBOT(undo) ((undo >> 16) & 0x0f)
 #define UNPACK_START(undo) ((undo >> 8) & 0xff)
+#define UNPACK_DID_SORT(undo) ((undo >> 24) & 0x0f)
 #define UNPACK_LAST(undo) (undo & 0xff)
 #define MAKE_KEY(x) (x[0] | (x[1] << 8) | (x[2] << 16) | (x[3] << 24))
 #define MAKE_KEY_EIGHT(x) (x[0] | (x[1] << 8) | (x[2] << 16) | (x[3] << 24) | (x[4] << 32) | (x[5] << 40) | (x[6] << 48) | (x[7] << 56))
@@ -54,6 +55,9 @@ typedef struct {
     unsigned int grid[256];
     unsigned int moves[256];//grid of minimum moves
     unsigned int robots[8];
+    unsigned int sorted_robots[8];
+    unsigned int robot_index[8];
+    unsigned int reverse_index[8];
     unsigned int robot_count;
     unsigned int token;
     unsigned int last;
@@ -87,29 +91,68 @@ inline unsigned long long make_key_shifts(int count, unsigned int *robots)
   return key;
 }
 
+void print_robots(int count, unsigned int* robots)
+{
+    printf("robots: {");
+    for(int i = 0; i < count; i++)
+    {
+      printf("%i",robots[i]);
+      if(i < count-1)
+      {
+        printf(",");
+      }
+    }
+    printf("}\n");
+}
+
+void sort_robots(Game *game)
+{
+    memcpy(game->sorted_robots, game->robots, sizeof(unsigned int) * 8);
+    bool unsorted = true;
+    int iteration = 1;
+    for(int j = 0; j < 8; j++)
+    {
+        game->robot_index[j] = j;
+    }
+    while(unsorted)
+    {
+        unsorted = false;
+        for(int i = 1; i < game->robot_count-iteration; i++)
+        {
+            if (game->sorted_robots[i] > game->sorted_robots[i+1]) {
+                unsorted = true;
+                swap(game->sorted_robots, i, i+1);
+                swap(game->robot_index, i, i+1);
+            }
+        }
+        iteration++;
+    }
+}
+
 inline unsigned int make_key(Game *game) {
-    unsigned int robots[8];
-    memcpy(robots, game->robots, sizeof(unsigned int) * 8);
-    if (robots[1] > robots[2]) {
-        swap(robots, 1, 2);
-    }
-    if (robots[2] > robots[3]) {
-        swap(robots, 2, 3);
-    }
-    if (robots[1] > robots[2]) {
-        swap(robots, 1, 2);
-    }
-    return make_key_shifts(game->robot_count,robots);
+    // unsigned int robots[8];
+    // memcpy(robots, game->robots, sizeof(unsigned int) * 8);
+    // if (robots[1] > robots[2]) {
+    //     swap(robots, 1, 2);
+    // }
+    // if (robots[2] > robots[3]) {
+    //     swap(robots, 2, 3);
+    // }
+    // if (robots[1] > robots[2]) {
+    //     swap(robots, 1, 2);
+    // }
+    return make_key_shifts(game->robot_count,game->sorted_robots);
 }
 
 unsigned long long hash(unsigned int key) {
-    key = ~key + (key << 15);
-    key = key ^ (key >> 12);
-    key = key + (key << 2);
-    key = key ^ (key >> 4);
-    key = key * 2057;
-    key = key ^ (key >> 16);
-    return key;
+	key = (~key) + (key << 21); // key = (key << 21) - key - 1;
+	key = key ^ (key >> 24);
+	key = (key + (key << 3)) + (key << 8); // key * 265
+	key = key ^ (key >> 14);
+	key = (key + (key << 2)) + (key << 4); // key * 21
+	key = key ^ (key >> 28);
+	key = key + (key << 31);
+	return key;
 }
 
 void set_alloc(Set *set, unsigned int count) {
@@ -131,7 +174,7 @@ void set_free(Set *set, unsigned int count) {
 void set_grow(Set *set);
 
 bool set_add(Set *set, unsigned long long key, unsigned int depth) {
-    unsigned long long index = 0;
+    unsigned long long index = hash(key) & set->mask;
     Entry *entry = set->data + index;
     while (entry->key && entry->key != key) {
         index = (index + 1) & set->mask;
@@ -174,7 +217,7 @@ void set_grow(Set *set) {
 
 inline bool game_over(Game *game) {
     if (game->robots[0] == game->token) {
-        printf("Game Over: %i -> Token: %i", game->robots[0], game->token);
+        // printf("Game Over: %i -> Token: %i", game->robots[0], game->token);
         return true;
     }
     else {
@@ -220,6 +263,17 @@ unsigned int compute_move(
     return index;
 }
 
+inline void swap_robots(Game *game, unsigned int a, unsigned int b )
+{
+    // printf("swapping %i <-> %i\n",a, b);
+    swap(game->sorted_robots, a, b);
+    swap(game->robot_index, game->reverse_index[a], game->reverse_index[b]);
+    for(int i = 1; i < game->robot_count; i++ )
+    {
+        game->reverse_index[game->robot_index[i]] = i;
+    }
+}
+
 unsigned int do_move(
     Game *game,
     unsigned int robot,
@@ -229,11 +283,71 @@ unsigned int do_move(
     unsigned int end = compute_move(game, robot, direction);
     unsigned int last = game->last;
     game->robots[robot] = end;
+
+    unsigned int robot_index = game->robot_index[robot];
+    game->sorted_robots[robot_index] = end;
+
     game->last = PACK_MOVE(robot, direction);
     UNSET_ROBOT(game->grid[start]);
     SET_ROBOT(game->grid[end]);
-    printf("Move: %i %i -> %i\n",robot, start, end);
-    return PACK_UNDO(robot, start, last);
+    // printf("Move: %i %i -> %i\n",robot, start, end);
+    unsigned int did_sort = 0;
+    // printf("PreSort:\n");
+    // print_robots(game->robot_count,game->sorted_robots);
+    // printf("index:\n");
+    // print_robots(game->robot_count,game->robot_index);
+    // if(robot_index > 8)
+    // {
+    //     printf("faulty robot index in do");
+    // }
+    if(robot != 0)
+    {
+        if(end > start)
+        {
+            while(robot_index < game->robot_count - 1)
+            {
+                if(game->sorted_robots[robot_index] > game->sorted_robots[robot_index+1])
+                {
+                    did_sort++;
+                    swap_robots(game, robot_index, robot_index+1);
+                    robot_index++;
+                }
+                else
+                {
+                    break;
+                }
+            }
+        }
+
+        if(end < start)
+        {
+            while(robot_index > 1)
+            {
+                if(game->sorted_robots[robot_index] < game->sorted_robots[robot_index-1])
+                {
+                    did_sort++;
+                    swap_robots(game, robot_index, robot_index-1);
+                    robot_index--;
+                }
+                else
+                {
+                    break;
+                }
+            }
+        }
+    }
+    // if(did_sort > 0)
+    // {
+    //     printf("PostSort:\n");
+    //     print_robots(game->robot_count,game->sorted_robots);
+    //     printf("index:\n");
+    //     print_robots(game->robot_count,game->robot_index);
+    // }
+    // if(robot > 8)
+    // {
+    //     printf("MOVE: Faulty Robot: %i\n",robot);
+    // }
+    return PACK_UNDO(robot, start, last, did_sort);
 }
 
 void undo_move(
@@ -241,6 +355,10 @@ void undo_move(
     unsigned int undo)
 {
     unsigned int robot = UNPACK_ROBOT(undo);
+    // if(robot > 8)
+    // {
+    //     printf("Faulty robot in Undo: %i\n", robot);
+    // }
     unsigned int start = UNPACK_START(undo);
     unsigned int last = UNPACK_LAST(undo);
     unsigned int end = game->robots[robot];
@@ -248,6 +366,49 @@ void undo_move(
     game->last = last;
     SET_ROBOT(game->grid[start]);
     UNSET_ROBOT(game->grid[end]);
+    
+    unsigned int robot_index = game->robot_index[robot];
+    game->sorted_robots[robot_index] = start;
+    
+    unsigned int did_sort = UNPACK_DID_SORT(undo);
+    // if(robot_index > 8)
+    // {
+    //     printf("Faulty robot index in Undo: %i\n",);
+    // }
+    if(did_sort > 0 && robot != 0)
+    {
+        if(start > end)
+        {
+            while(robot_index < game->robot_count - 1)
+            {
+                if(game->sorted_robots[robot_index] > game->sorted_robots[robot_index+1])
+                {
+                    swap_robots(game, robot_index, robot_index+1);
+                    robot_index++;
+                }
+                else
+                {
+                    break;
+                }
+            }
+        }
+
+        if(start < end)
+        {
+            while(robot_index > 1)
+            {
+                if(game->sorted_robots[robot_index] < game->sorted_robots[robot_index-1])
+                {
+                    swap_robots(game, robot_index, robot_index-1);
+                    robot_index--;
+                }
+                else
+                {
+                    break;
+                }
+            }
+        }
+    }
 }
 
 void precompute_minimum_moves(
@@ -352,18 +513,11 @@ void print_game_grid(unsigned int *grid)
   }
 }
 
+
+
 void print_game_robots(Game *game)
 {
-  // printf("robots: { %i, %i, %i, %i }\n", robots[0], robots[1], robots[2], robots[3]);
-  printf("robots: {");
-  for(int i = 0; i < game->robot_count; i++)
-  {
-    printf("%i",game->robots[i]);
-    if(i < game->robot_count-1)
-    {
-      printf(",");
-    }
-  }
+    print_robots(game->robot_count, game->robots);
 }
 
 unsigned int search(
@@ -373,7 +527,9 @@ unsigned int search(
 {
     print_game_grid(game->grid);
     print_game_robots(game);
-    printf("token: %i\n", game->token);
+    sort_robots(game);
+    print_robots(game->robot_count,game->sorted_robots);
+    // printf("token: %i\n", game->token);
     if (game_over(game)) {
         return 0;
     }
@@ -418,6 +574,9 @@ int main(int argc, char *argv[]) {
         {9,1,1,1,3,9,1,1,1,3,9,1,1,1,5,3,8,0,22,8,0,0,0,0,0,0,0,0,0,2,9,2,8,0,1,0,0,0,0,0,0,0,2,28,0,0,0,2,26,12,0,0,0,0,4,0,0,0,0,1,0,0,0,6,12,1,0,0,0,2,9,0,0,0,0,0,0,0,0,3,9,0,0,0,0,4,0,0,0,0,0,0,0,0,0,2,8,0,0,0,0,3,8,4,4,0,4,0,0,6,8,2,8,0,0,6,8,0,2,9,3,8,3,8,0,1,0,2,8,0,0,5,0,0,2,12,6,8,0,0,0,0,4,2,8,0,0,3,8,0,0,1,1,0,0,0,0,2,9,2,8,0,0,0,0,0,0,0,0,0,2,12,0,0,0,6,10,12,0,0,0,0,0,0,0,4,0,1,0,0,0,3,8,1,0,0,0,0,6,8,0,3,8,0,0,0,0,2,12,0,4,0,0,0,1,0,0,0,0,0,0,0,0,2,9,2,25,0,0,0,0,0,0,0,0,0,0,6,8,2,12,4,4,4,4,6,12,4,4,4,6,12,4,5,4,6},
         {0},
         {43, 48, 226, 18, 254},
+        {0},
+        {0},
+        {0},
         5,
         201,
         0
