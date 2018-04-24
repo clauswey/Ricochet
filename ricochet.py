@@ -21,6 +21,9 @@ class Game(Structure):
         ('grid', c_uint * 256),
         ('moves', c_uint * 256),
         ('robots', c_uint * 4),
+        ('sorted_robots', c_uint * 4),
+        ('robot_index', c_uint * 4),
+        ('reverse_index', c_uint * 4),
         ('token', c_uint),
         ('last', c_uint),
     ]

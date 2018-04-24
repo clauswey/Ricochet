@@ -16,10 +16,11 @@
 #define UNSET_ROBOT(x) (x &= ~ROBOT)
 
 #define PACK_MOVE(robot, direction) (robot << 4 | direction)
-#define PACK_UNDO(robot, start, last) (robot << 16 | start << 8 | last)
+#define PACK_UNDO(robot, start, last, did_sort) (did_sort << 24 | robot << 16 | start << 8 | last)
 #define UNPACK_ROBOT(undo) ((undo >> 16) & 0xff)
 #define UNPACK_START(undo) ((undo >> 8) & 0xff)
 #define UNPACK_LAST(undo) (undo & 0xff)
+#define UNPACK_DID_SORT(undo) ((undo >> 24) & 0x0f)
 #define MAKE_KEY(x) (x[0] | (x[1] << 8) | (x[2] << 16) | (x[3] << 24))
 
 #define bool unsigned int
@@ -38,6 +39,9 @@ typedef struct {
     unsigned int grid[256];
     unsigned int moves[256];
     unsigned int robots[4];
+    unsigned int sorted_robots[4];
+    unsigned int robot_index[4];
+    unsigned int reverse_index[4];
     unsigned int token;
     unsigned int last;
 } Game;
@@ -59,19 +63,47 @@ inline void swap(unsigned int *array, unsigned int a, unsigned int b) {
     array[b] = temp;
 }
 
+void sort_robots(Game *game)
+{
+    memcpy(game->sorted_robots, game->robots, sizeof(unsigned int) * 4);
+    for(int j = 0; j < 4; j++)
+    {
+        game->robot_index[j] = j;
+    }
+    bool unsorted = true;
+    int iteration = 1;
+    while(unsorted)
+    {
+        unsorted = false;
+        for(int i = 1; i < 4-iteration; i++)
+        {
+            if (game->sorted_robots[i] > game->sorted_robots[i+1]) {
+                unsorted = true;
+                swap(game->sorted_robots, i, i+1);
+                swap(game->robot_index, i, i+1);
+            }
+        }
+        iteration++;
+    }
+    for(int i = 0; i < 4; i++ )
+    {
+        game->reverse_index[game->robot_index[i]] = i;
+    }
+}
+
+inline void swap_robots(Game *game, unsigned int a, unsigned int b )
+{
+    // printf("swapping %i <-> %i\n",a, b);
+    swap(game->sorted_robots, a, b);
+    swap(game->robot_index, game->reverse_index[a], game->reverse_index[b]);
+    for(int i = 1; i < 4; i++ )
+    {
+        game->reverse_index[game->robot_index[i]] = i;
+    }
+}
+
 inline unsigned int make_key(Game *game) {
-    unsigned int robots[4];
-    memcpy(robots, game->robots, sizeof(unsigned int) * 4);
-    if (robots[1] > robots[2]) {
-        swap(robots, 1, 2);
-    }
-    if (robots[2] > robots[3]) {
-        swap(robots, 2, 3);
-    }
-    if (robots[1] > robots[2]) {
-        swap(robots, 1, 2);
-    }
-    return MAKE_KEY(robots);
+    return MAKE_KEY(game->sorted_robots);
 }
 
 unsigned int hash(unsigned int key) {
@@ -192,18 +224,59 @@ unsigned int compute_move(
 }
 
 unsigned int do_move(
-    Game *game, 
-    unsigned int robot, 
-    unsigned int direction) 
+    Game *game,
+    unsigned int robot,
+    unsigned int direction)
 {
     unsigned int start = game->robots[robot];
     unsigned int end = compute_move(game, robot, direction);
     unsigned int last = game->last;
     game->robots[robot] = end;
+
+    unsigned int robot_index = game->robot_index[robot];
+    game->sorted_robots[robot_index] = end;
+
     game->last = PACK_MOVE(robot, direction);
     UNSET_ROBOT(game->grid[start]);
     SET_ROBOT(game->grid[end]);
-    return PACK_UNDO(robot, start, last);
+    unsigned int did_sort = 0;
+    if(robot != 0)
+    {
+        if(end > start)
+        {
+            while(robot_index < 3)
+            {
+                if(game->sorted_robots[robot_index] > game->sorted_robots[robot_index+1])
+                {
+                    did_sort++;
+                    swap_robots(game, robot_index, robot_index+1);
+                    robot_index++;
+                }
+                else
+                {
+                    break;
+                }
+            }
+        }
+
+        if(end < start)
+        {
+            while(robot_index > 1)
+            {
+                if(game->sorted_robots[robot_index] < game->sorted_robots[robot_index-1])
+                {
+                    did_sort++;
+                    swap_robots(game, robot_index, robot_index-1);
+                    robot_index--;
+                }
+                else
+                {
+                    break;
+                }
+            }
+        }
+    }
+    return PACK_UNDO(robot, start, last, did_sort);
 }
 
 void undo_move(
@@ -218,6 +291,43 @@ void undo_move(
     game->last = last;
     SET_ROBOT(game->grid[start]);
     UNSET_ROBOT(game->grid[end]);
+    unsigned int robot_index = game->robot_index[robot];
+    game->sorted_robots[robot_index] = start;
+    unsigned int did_sort = UNPACK_DID_SORT(undo);
+    if(did_sort > 0 && robot != 0)
+    {
+        if(start > end)
+        {
+            while(robot_index < 3)
+            {
+                if(game->sorted_robots[robot_index] > game->sorted_robots[robot_index+1])
+                {
+                    swap_robots(game, robot_index, robot_index+1);
+                    robot_index++;
+                }
+                else
+                {
+                    break;
+                }
+            }
+        }
+
+        if(start < end)
+        {
+            while(robot_index > 1)
+            {
+                if(game->sorted_robots[robot_index] < game->sorted_robots[robot_index-1])
+                {
+                    swap_robots(game, robot_index, robot_index-1);
+                    robot_index--;
+                }
+                else
+                {
+                    break;
+                }
+            }
+        }
+    }
 }
 
 void precompute_minimum_moves(
@@ -308,6 +418,7 @@ unsigned int search(
     unsigned char *path,
     void (*callback)(unsigned int, unsigned int, unsigned int, unsigned int)) 
 {
+    sort_robots(game);
     if (game_over(game)) {
         return 0;
     }
